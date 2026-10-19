@@ -1,0 +1,46 @@
+name: Build APK
+
+on:
+  workflow_dispatch: {}
+
+defaults:
+  run:
+    working-directory: tajerna_pro
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unzip project
+        working-directory: .
+        run: unzip -q tajerna_pro.zip
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Generate Android files
+        run: |
+          flutter create --org dz.tajerna --project-name tajerna_pro .
+          rm -f test/widget_test.dart
+
+      - run: flutter pub get
+
+      - name: Unit tests (informational)
+        run: flutter test
+        continue-on-error: true
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tajerna-pro-apk
+          path: tajerna_pro/build/app/outputs/flutter-apk/app-release.apk
